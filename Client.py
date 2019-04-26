@@ -1,16 +1,26 @@
 #####################################
 # Client.py
+#
+# Client side for multiple user messaging
+# program.
 #####################################
 import threading
 from socket import *
 
 global loggedIn
 loggedIn = False
+global loggingOut
+loggingOut = False
 global userID
+global listeningThread
 
 
 #####################################
 # Function: logout
+#
+# Sends the logout message to the server
+# and waits for conformation that logout
+# was successful, then exits program.
 #####################################
 def logout():
     clientSocket = server_connect()
@@ -26,12 +36,18 @@ def logout():
         print("Logged out")
         global loggedIn
         loggedIn = False
+        global loggingOut
+        loggingOut = True
     clientSocket.close()
 # End of function logout
 
 
 #####################################
 # Function: message
+#
+# Asks user for who they want to send a
+# message to, and sends the message
+# through the server. Waits for ack or nack.
 #####################################
 def message():
     clientSocket = server_connect()
@@ -49,6 +65,10 @@ def message():
 
 #####################################
 # Function: login
+#
+# Asks for desired user ID and passes
+# the request to the server, then waits
+# for confirmation that log in was successful.
 #####################################
 def login():
     clientToServer = server_connect()
@@ -63,7 +83,11 @@ def login():
     if("FALSE" in response.upper()):
         print("Failed to login", response)
     else:
-        nice = response.split("\t")[0] + "\t" +response.split("\t")[1]
+        port = int(response.split("\t")[2])
+        global listeningThread
+        listeningThread = threading.Thread(target=inputListen, args=(port, 0))
+        listeningThread.daemon = True
+        listeningThread.start()
         print("Logged In")
         global loggedIn
         loggedIn = True
@@ -72,6 +96,10 @@ def login():
 
 #####################################
 # Function: userList
+#
+# Passes a request to the server for
+# the list of currently logged in users,
+# then displays the list.
 #####################################
 def userList():
     clientSocket = server_connect()
@@ -88,6 +116,8 @@ def userList():
 
 #####################################
 # Function: server_connect
+#
+# Opens up a connection to the server.
 #####################################
 def server_connect():
     serverName = "127.0.0.1"
@@ -100,6 +130,8 @@ def server_connect():
 
 #####################################
 # Function: handler
+#
+# Handles incoming messages from other users.
 #####################################
 def handler(connectionSocket):
     message = connectionSocket.recv(4096)
@@ -122,9 +154,12 @@ def handler(connectionSocket):
 
 #####################################
 # Function: inputListen
+#
+# After logging in and given a port number
+# to listen on, this function waits for
+# messages from the server. Runs in its own thread.
 #####################################
-def inputListen():
-    listeningPort = 12013
+def inputListen(listeningPort,val):
     clientSocket = socket(AF_INET, SOCK_STREAM)
     clientSocket.bind(('', listeningPort))
     clientSocket.listen(10)
@@ -136,6 +171,9 @@ def inputListen():
 
 #####################################
 # Function: userLoop
+#
+# The main loop for the user. Runs in
+# its own Thread.
 #####################################
 def userLoop():
     while(True):
@@ -152,21 +190,20 @@ def userLoop():
             elif choice == 0:
                 logout()
         else:
-            print("1 - for log-in")
-            print("0 - for log-out")
-            print(" ")
-            choice = int(input("Your choice is: "))
-            if choice == 1:
-                login()
-            elif choice == 0:
+            if(not loggingOut):
+                print("1 - for log-in")
+                print("0 - for log-out")
+                print(" ")
+                choice = int(input("Your choice is: "))
+                if choice == 1:
+                    login()
+                elif choice == 0:
+                    exit(0)
+            else:
                 exit(0)
 # End of function userLoop
 
 
 # Main Program
-global listeningThread
-listeningThread = threading.Thread(target=inputListen)
-listeningThread.daemon = True
 userThread = threading.Thread(target=userLoop)
-listeningThread.start()
 userThread.start()
