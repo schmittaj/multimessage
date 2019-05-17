@@ -31,6 +31,7 @@ def loginProcessing(request, connectionSocket, address):
     if good:
         response += "\t" + str(userPort)
         userPort += 1
+        print(str(datetime.now()) + ": " + str(userid) + " logged in.")
     response = response.encode()
     connectionSocket.send(response)
     connectionSocket.close()
@@ -56,6 +57,7 @@ def messageProcessing(request,connectionSocket):
     clientSocket = socket(AF_INET, SOCK_STREAM)
     clientSocket.connect((addr, usrPort))
     clientSocket.send(outgoing)
+    print(str(datetime.now()) + ": " + str(sender) + " is sending a message to " + str(receiver))
     ack = clientSocket.recv(4096)
     ack = ack.decode()
     ackMsg = ack.split("\t")[3]
@@ -95,6 +97,7 @@ def getListProcessing(connectionSocket):
 def logoutProcessing(message,connectionSocket):
     userid = message.split('\t')[1].strip()
     success = remove_user_from_list(userid)
+    print(str(datetime.now()) + ": " + str(userid) + " logged out.")
     response = "LOGOUT\t" + str(success)
     response = response.encode()
     connectionSocket.send(response)

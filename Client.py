@@ -139,8 +139,8 @@ def handler(connectionSocket):
     wholeMsg = message.split("\t")
     if wholeMsg[0] == "MESSAGE":
         if wholeMsg[2] == userID:
-            print("Message from user " + wholeMsg[1])
-            print(wholeMsg[3])
+            print()
+            print("Message from user " + wholeMsg[1] + ": " + wholeMsg[3])
             response = "MESSAGE\t" + wholeMsg[1] + "\t" + userID + "\tTrue"
             response = response.encode()
             connectionSocket.send(response)
